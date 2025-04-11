@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReviewSent | AI Sentiment Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --positive: #10b981;
+            --negative: #ef4444;
+            --neutral: #6b7280;
+            --bg: #f9fafb;
+            --card: #ffffff;
+            --text: #111827;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, var(--primary), #3a0ca3);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .subtitle {
+            color: var(--neutral);
+            font-size: 1.1rem;
+        }
+        
+        .input-section {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .btn:hover {
+            background-color: #3a56e8;
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .results-section {
+            display: none;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: var(--card);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .positive-stat {
+            border-top: 4px solid var(--positive);
+        }
+        
+        .negative-stat {
+            border-top: 4px solid var(--negative);
+        }
+        
+        .reviews-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .review-card {
+            background: var(--card);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .review-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+        
+        .positive-review::before {
+            background-color: var(--positive);
+        }
+        
+        .negative-review::before {
+            background-color: var(--negative);
+        }
+        
+        .sentiment-tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .positive-tag {
+            background-color: #d1fae5;
+            color: var(--positive);
+        }
+        
+        .negative-tag {
+            background-color: #fee2e2;
+            color: var(--negative);
+        }
+        
+        .confidence-meter {
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+        
+        .confidence-level {
+            height: 100%;
+        }
+        
+        .positive-confidence {
+            background-color: var(--positive);
+        }
+        
+        .negative-confidence {
+            background-color: var(--negative);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .spinner {
+            width: 3rem;
+            height: 3rem;
+            border: 4px solid rgba(67, 97, 238, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            color: var(--negative);
+            background-color: #fee2e2;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>ReviewSent AI</h1>
+        <p class="subtitle">Analyze customer review sentiments with AI</p>
+    </header>
+    
+    <div class="input-section">
+        <h2>Enter Customer Reviews</h2>
+        <p>Paste reviews below, one per line</p>
+        <textarea id="reviewsInput" placeholder="Example:
+The product is amazing! Fast shipping and great quality.
+Terrible experience, would not recommend.
+It's okay but could be improved."></textarea>
+        <button id="analyzeBtn" class="btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            Analyze Reviews
+        </button>
+    </div>
+    
+    <div class="error-message" id="errorMessage"></div>
+    
+    <div class="loading" id="loadingIndicator">
+        <div class="spinner"></div>
+        <p>Analyzing reviews with AI...</p>
+    </div>
+    
+    <div class="results-section" id="resultsSection">
+        <h2>Sentiment Analysis Results</h2>
+        <div class="stats-container" id="statsContainer">
+            <!-- Filled by JavaScript -->
+        </div>
+        
+        <h2>Detailed Analysis</h2>
+        <div class="reviews-container" id="reviewsContainer">
+            <!-- Filled by JavaScript -->
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const reviewsInput = document.getElementById('reviewsInput');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const resultsSection = document.getElementById('resultsSection');
+            const errorMessage = document.getElementById('errorMessage');
+            const statsContainer = document.getElementById('statsContainer');
+            const reviewsContainer = document.getElementById('reviewsContainer');
+            
+            analyzeBtn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                
+                const reviews = reviewsInput.value.trim();
+                if (!reviews) {
+                    showError('Please enter at least one review');
+                    return;
+                }
+                
+                // Show loading state
+                analyzeBtn.disabled = true;
+                loadingIndicator.style.display = 'block';
+                resultsSection.style.display = 'none';
+                errorMessage.style.display = 'none';
+                
+                try {
+                    const response = await fetch('/analyze', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `reviews=${encodeURIComponent(reviews)}`
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Analysis failed');
+                    }
+                    
+                    const data = await response.json();
+                    displayResults(data);
+                    
+                } catch (err) {
+                    showError(err.message);
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                    analyzeBtn.disabled = false;
+                }
+            });
+            
+            function displayResults(data) {
+                // Display stats
+                statsContainer.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-value">${data.stats.total}</div>
+                        <div>Total Reviews</div>
+                    </div>
+                    <div class="stat-card positive-stat">
+                        <div class="stat-value">${data.stats.positive}</div>
+                        <div>Positive</div>
+                    </div>
+                    <div class="stat-card negative-stat">
+                        <div class="stat-value">${data.stats.negative}</div>
+                        <div>Negative</div>
+                    </div>
+                `;
+                
+                // Display individual reviews
+                reviewsContainer.innerHTML = data.sentiments.map(review => {
+                    const sentimentClass = review.sentiment.toLowerCase();
+                    const confidencePercent = Math.round(review.confidence * 100);
+                    
+                    return `
+                        <div class="review-card ${sentimentClass}-review">
+                            <div class="sentiment-tag ${sentimentClass}-tag">
+                                ${review.sentiment} (${confidencePercent}%)
+                            </div>
+                            <p>${review.review}</p>
+                            <div class="confidence-meter">
+                                <div class="confidence-level ${sentimentClass}-confidence" 
+                                     style="width: ${confidencePercent}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Show results
+                resultsSection.style.display = 'block';
+            }
+            
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+                resultsSection.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
